@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Quiz Studio</title>
+<meta name="theme-color" content="#F5F0E6" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icon.svg" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
+  :root {
+    --bg: #F5F0E6;
+    --card: #FFFFFF;
+    --border: #E3DCC8;
+    --ink: #1E2530;
+    --muted: #6B6355;
+    --red: #C1392B;
+    --red-bg: rgba(193,57,43,0.09);
+    --green: #2F7A4F;
+    --green-bg: rgba(47,122,79,0.09);
+    --gold: #B8860B;
+    --gold-bg: rgba(184,134,11,0.1);
+  }
+  [data-theme="dark"] {
+    --bg: #14161A;
+    --card: #1D2027;
+    --border: #2C303A;
+    --ink: #EDEBE3;
+    --muted: #9497A0;
+    --red: #FF6B5B;
+    --red-bg: rgba(255,107,91,0.12);
+    --green: #4ED08A;
+    --green-bg: rgba(78,208,138,0.12);
+    --gold: #E8C468;
+    --gold-bg: rgba(232,196,104,0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    padding-bottom: 50px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .serif { font-family: 'Merriweather', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .wrap { max-width: 580px; margin: 0 auto; padding: 0 18px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .btn-primary {
+    width: 100%; padding: 15px 18px; border-radius: 12px; border: none;
+    background: var(--ink); color: var(--bg); font-weight: 700; font-size: 15px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+  }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-secondary {
+    padding: 13px 16px; border-radius: 12px; border: 1.5px solid var(--border); background: transparent;
+    color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer;
+  }
+  .chip {
+    padding: 8px 13px; border-radius: 999px; border: 1.5px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  .chip.active { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+  .field-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 1.1px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 9px; font-weight: 600;
+  }
+  .spin { animation: spin 1s linear infinite; display:inline-block; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px);} to {opacity:1; transform:translateY(0);} }
+  .fade { animation: fadeIn 0.25s ease; }
+  ::selection { background: var(--gold-bg); }
+  .bubble {
+    width: 34px; height: 34px; border-radius: 999px; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13.5px;
+    color: var(--muted); flex-shrink: 0; font-family: 'JetBrains Mono', monospace;
+  }
+  .option-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px;
+    border: 1.5px solid var(--border); margin-bottom: 10px; cursor: pointer; background: var(--card);
+  }
+  .option-row.selected { border-color: var(--ink); background: var(--gold-bg); }
+  .option-row.selected .bubble { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .option-row.correct { border-color: var(--green); background: var(--green-bg); }
+  .option-row.correct .bubble { background: var(--green); border-color: var(--green); color: #fff; }
+  .option-row.incorrect { border-color: var(--red); background: var(--red-bg); }
+  .option-row.incorrect .bubble { background: var(--red); border-color: var(--red); color: #fff; }
+  input[type="text"] {
+    width: 100%; background: var(--card); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 13px 14px; color: var(--ink); font-family: 'Inter', sans-serif; font-size: 14.5px; outline: none;
+  }
+  input[type="text"]:focus { border-color: var(--ink); }
+  .progress-track { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--gold); border-radius: 999px; transition: width 0.3s ease; }
+  .badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 3px 9px; border-radius: 999px; text-transform: uppercase;
+  }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap" style="padding-top:28px; padding-bottom:14px; display:flex; align-items:center; justify-content:space-between;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="12" fill="var(--ink)"/>
+      <circle cx="24" cy="24" r="13" stroke="var(--bg)" stroke-width="2.5"/>
+      <path d="M18 24l4 4 8-9" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="serif" style="font-size:20px; font-weight:900;">Quiz Studio</span>
+  </div>
+  <button id="themeToggle" class="btn-secondary no-print" style="padding:8px 12px;">🌙</button>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="screen-setup" class="wrap fade">
+  <p style="color:var(--muted); font-size:14px; margin:0 0 18px; line-height:1.5;">
+    Apna PDF ya photo upload karo — AI usi content se turant quiz bana dega.
+  </p>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="field-label">Study Material</div>
+    <div id="dropZone" style="border:2px dashed var(--border); border-radius:12px; padding:26px 16px; text-align:center; cursor:pointer;">
+      <div id="dropZoneEmpty">
+        <div style="font-size:28px; margin-bottom:8px;">📄</div>
+        <div style="font-weight:600; font-size:14px;">Tap karke PDF ya image chuno</div>
+        <div style="color:var(--muted); font-size:12px; margin-top:5px;">PDF, JPG, PNG, WEBP · Max 4MB</div>
+      </div>
+      <div id="dropZoneFile" style="display:none; text-align:left;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">✅</span>
+          <div style="flex:1; min-width:0;">
+            <div id="fileName" style="font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+            <div id="fileSize" style="color:var(--muted); font-size:11.5px;"></div>
+          </div>
+          <button id="removeFileBtn" class="btn-secondary" style="padding:6px 10px; font-size:12px;">Hatao</button>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,application/pdf" style="display:none;" />
+    <p id="fileError" style="color:var(--red); font-size:12px; margin:8px 0 0; display:none;"></p>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div style="margin-bottom:18px;">
+      <div class="field-label">Language</div>
+      <div id="lang-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+    <div style="margin-bottom:18px;">
+      <div class="field-label">Quiz Type</div>
+      <div id="qtype-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+    <div style="margin-bottom:18px;">
+      <div class="field-label">Difficulty</div>
+      <div id="diff-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+    <div style="margin-bottom:18px;">
+      <div class="field-label">Question Count</div>
+      <div id="count-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+      <p id="countWarning" style="color:var(--gold); font-size:11.5px; margin:8px 0 0; display:none;">
+        ⚠️ Zyada questions banane mein thoda zyada time lag sakta hai.
+      </p>
+    </div>
+    <div style="margin-bottom:18px;">
+      <div class="field-label">Question Order</div>
+      <div id="qorder-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+    <div>
+      <div class="field-label">Option Order</div>
+      <div id="oorder-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+  </div>
+
+  <button id="generateBtn" class="btn-primary" disabled>Quiz Generate Karo</button>
+  <p id="setupError" style="color:var(--red); font-size:13px; margin-top:12px; text-align:center; display:none;"></p>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="screen-loading" class="wrap fade" style="display:none; text-align:center; padding-top:60px;">
+  <div class="mono spin" style="font-size:32px; margin-bottom:20px;">◐</div>
+  <div id="loadingStep" class="serif" style="font-size:16px; font-weight:700; margin-bottom:8px;">दस्तावेज़ पढ़ा जा रहा है...</div>
+  <div style="color:var(--muted); font-size:13px;">Thoda intezaar karo, AI content samajh raha hai</div>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div id="screen-quiz" class="wrap fade" style="display:none;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+    <span class="mono" id="quizCounter" style="font-size:12.5px; color:var(--muted);"></span>
+    <span class="mono" id="quizTimer" style="font-size:12.5px; color:var(--muted);"></span>
+  </div>
+  <div class="progress-track" style="margin-bottom:16px;">
+    <div class="progress-fill" id="progressFill" style="width:0%;"></div>
+  </div>
+
+  <div id="questionNav" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px;"></div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <span class="badge" id="questionTypeBadge" style="background:var(--gold-bg); color:var(--gold); margin-bottom:10px;"></span>
+    <p id="questionText" class="serif" style="font-size:17px; font-weight:700; line-height:1.5; margin:6px 0 18px;"></p>
+    <div id="optionsArea"></div>
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <button id="prevBtn" class="btn-secondary" style="flex:1;">← Pichla</button>
+    <button id="nextBtn" class="btn-primary" style="flex:1; margin-top:0;">Agla →</button>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="screen-result" class="wrap fade" style="display:none;">
+  <div id="printArea">
+    <div class="card" style="text-align:center; margin-bottom:16px;">
+      <div id="gradeBadge" class="serif" style="font-size:42px; font-weight:900; margin-bottom:4px;"></div>
+      <div id="scoreLine" style="font-size:15px; color:var(--muted); margin-bottom:14px;"></div>
+      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <div class="badge" style="background:var(--green-bg); color:var(--green);" id="correctCount"></div>
+        <div class="badge" style="background:var(--red-bg); color:var(--red);" id="wrongCount"></div>
+        <div class="badge" style="background:var(--gold-bg); color:var(--gold);" id="skippedCount"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <p id="motivationText" style="font-size:14.5px; line-height:1.6; margin:0;"></p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="field-label">Performance Summary</div>
+      <div style="margin-bottom:10px;">
+        <span style="font-size:12.5px; font-weight:700; color:var(--green);">✓ Strong Topics</span>
+        <p id="strongTopics" style="font-size:13.5px; margin:5px 0 0; color:var(--muted);"></p>
+      </div>
+      <div>
+        <span style="font-size:12.5px; font-weight:700; color:var(--red);">⚠ Weak Topics — Revise These</span>
+        <p id="weakTopics" style="font-size:13.5px; margin:5px 0 0; color:var(--muted);"></p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="field-label">Answer Key</div>
+      <div id="answerKeyList"></div>
+    </div>
+  </div>
+
+  <div class="no-print" style="display:flex; flex-direction:column; gap:10px;">
+    <button id="printBtn" class="btn-secondary">🖨️ Print / PDF Download Karo</button>
+    <div style="display:flex; gap:10px;">
+      <button id="restartBtn" class="btn-secondary" style="flex:1;">↻ Yehi Quiz Dobara Do</button>
+      <button id="newQuizBtn" class="btn-primary" style="flex:1; margin-top:0;">+ Naya Quiz Banao</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LANGS = [{id:"hindi",label:"Hindi"},{id:"english",label:"English"},{id:"hinglish",label:"Hinglish"}];
+const QTYPES = [{id:"mcq",label:"MCQ"},{id:"truefalse",label:"True/False"},{id:"fill",label:"Fill Blanks"},{id:"oneword",label:"One-Word"},{id:"mixed",label:"Mixed"}];
+const DIFFS = [{id:"easy",label:"Easy"},{id:"medium",label:"Medium"},{id:"hard",label:"Hard"},{id:"competitive",label:"Competitive"}];
+const COUNTS = [{id:"5",label:"5"},{id:"10",label:"10"},{id:"20",label:"20"},{id:"30",label:"30"},{id:"50",label:"50"},{id:"100",label:"100"}];
+const QORDERS = [{id:"sequential",label:"Sequential"},{id:"random",label:"Random"}];
+const OORDERS = [{id:"original",label:"Original"},{id:"randomized",label:"Randomized"}];
+
+const state = {
+  language:"hindi", quizType:"mcq", difficulty:"medium", count:"10",
+  questionOrder:"sequential", optionOrder:"original",
+  file:null, fileBase64:null, fileMime:null,
+  quiz:null, currentIndex:0, answers:[], startTime:null, timerInterval:null,
+};
+
+function renderChips(containerId, list, key) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  list.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = "chip" + (state[key] === item.id ? " active" : "");
+    btn.textContent = item.label;
+    btn.onclick = () => {
+      state[key] = item.id;
+      renderChips(containerId, list, key);
+      if (key === "count") {
+        document.getElementById("countWarning").style.display = (item.id === "50" || item.id === "100") ? "block" : "none";
+      }
+    };
+    el.appendChild(btn);
+  });
+}
+renderChips("lang-chips", LANGS, "language");
+renderChips("qtype-chips", QTYPES, "quizType");
+renderChips("diff-chips", DIFFS, "difficulty");
+renderChips("count-chips", COUNTS, "count");
+renderChips("qorder-chips", QORDERS, "questionOrder");
+renderChips("oorder-chips", OORDERS, "optionOrder");
+
+// Theme toggle
+const themeToggle = document.getElementById("themeToggle");
+themeToggle.onclick = () => {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+  themeToggle.textContent = isDark ? "🌙" : "☀️";
+};
+
+// File handling
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+const fileError = document.getElementById("fileError");
+const generateBtn = document.getElementById("generateBtn");
+
+dropZone.addEventListener("click", () => fileInput.click());
+["dragover","drop"].forEach(evt => dropZone.addEventListener(evt, e => e.preventDefault()));
+dropZone.addEventListener("drop", e => {
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", e => {
+  if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+});
+document.getElementById("removeFileBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  state.file = null; state.fileBase64 = null; state.fileMime = null;
+  document.getElementById("dropZoneEmpty").style.display = "block";
+  document.getElementById("dropZoneFile").style.display = "none";
+  generateBtn.disabled = true;
+});
+
+function handleFile(file) {
+  fileError.style.display = "none";
+  const allowed = ["image/png","image/jpeg","image/webp","application/pdf"];
+  if (!allowed.includes(file.type)) {
+    fileError.textContent = "Sirf PDF, JPG, PNG, ya WEBP file allowed hai.";
+    fileError.style.display = "block";
+    return;
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    fileError.textContent = "File 4MB se choti honi chahiye. Thodi chhoti file try karo.";
+    fileError.style.display = "block";
+    return;
+  }
+  state.file = file;
+  state.fileMime = file.type;
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.fileBase64 = reader.result.split(",")[1];
+    document.getElementById("fileName").textContent = file.name;
+    document.getElementById("fileSize").textContent = (file.size/1024/1024).toFixed(2) + " MB";
+    document.getElementById("dropZoneEmpty").style.display = "none";
+    document.getElementById("dropZoneFile").style.display = "block";
+    generateBtn.disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function showScreen(name) {
+  ["setup","loading","quiz","result"].forEach(s => {
+    document.getElementById("screen-" + s).style.display = (s === name) ? "block" : "none";
+  });
+}
+
+const loadingSteps = [
+  "दस्तावेज़ पढ़ा जा रहा है...",
+  "मुख्य विषय समझे जा रहे हैं...",
+  "महत्वपूर्ण अवधारणाएँ निकाली जा रही हैं...",
+  "बार-बार आने वाले टॉपिक्स पहचाने जा रहे हैं...",
+  "प्रश्न तैयार किए जा रहे हैं..."
+];
+let loadingInterval = null;
+function startLoadingAnimation() {
+  let i = 0;
+  document.getElementById("loadingStep").textContent = loadingSteps[0];
+  loadingInterval = setInterval(() => {
+    i = (i + 1) % loadingSteps.length;
+    document.getElementById("loadingStep").textContent = loadingSteps[i];
+  }, 1600);
+}
+function stopLoadingAnimation() { clearInterval(loadingInterval); }
+
+document.getElementById("generateBtn").addEventListener("click", generateQuiz);
+
+async function generateQuiz() {
+  const setupError = document.getElementById("setupError");
+  setupError.style.display = "none";
+  showScreen("loading");
+  startLoadingAnimation();
+  try {
+    const res = await fetch("/api/generate-quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileBase64: state.fileBase64,
+        mimeType: state.fileMime,
+        language: state.language,
+        quizType: state.quizType,
+        difficulty: state.difficulty,
+        count: state.count,
+      }),
+    });
+    if (!res.ok) throw new Error("Request failed");
+    const data = await res.json();
+    let questions = data.questions || [];
+    if (state.questionOrder === "random") questions = shuffleArray(questions);
+    if (state.optionOrder === "randomized") questions = questions.map(randomizeOptions);
+    state.quiz = { title: data.quizTitle || "Quiz Studio", questions };
+    state.answers = new Array(questions.length).fill(null);
+    state.currentIndex = 0;
+    state.startTime = Date.now();
+    stopLoadingAnimation();
+    renderQuizScreen();
+    showScreen("quiz");
+    startTimer();
+  } catch (e) {
+    stopLoadingAnimation();
+    showScreen("setup");
+    setupError.textContent = "Quiz generate nahi ho paaya. File check karke dobara try karo.";
+    setupError.style.display = "block";
+  }
+}
+
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function randomizeOptions(q) {
+  if (q.type !== "mcq" && q.type !== "truefalse") return q;
+  if (!q.options || q.options.length === 0) return q;
+  const indices = q.options.map((_, i) => i);
+  const shuffled = shuffleArray(indices);
+  const newOptions = shuffled.map(i => q.options[i]);
+  const newCorrectIndex = shuffled.indexOf(q.correctIndex);
+  return { ...q, options: newOptions, correctIndex: newCorrectIndex };
+}
+
+function startTimer() {
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    const secs = Math.floor((Date.now() - state.startTime) / 1000);
+    const m = Math.floor(secs / 60).toString().padStart(2,"0");
+    const s = (secs % 60).toString().padStart(2,"0");
+    document.getElementById("quizTimer").textContent = `⏱ ${m}:${s}`;
+  }, 1000);
+}
+
+function renderQuizScreen() {
+  const q = state.quiz.questions[state.currentIndex];
+  const total = state.quiz.questions.length;
+  document.getElementById("quizCounter").textContent = `Question ${state.currentIndex+1} / ${total}`;
+  document.getElementById("progressFill").style.width = `${((state.currentIndex+1)/total)*100}%`;
+
+  const nav = document.getElementById("questionNav");
+  nav.innerHTML = "";
+  state.quiz.questions.forEach((_, i) => {
+    const dot = document.createElement("button");
+    const answered = state.answers[i] !== null;
+    dot.textContent = i+1;
+    dot.className = "chip" + (i === state.currentIndex ? " active" : "");
+    dot.style.cssText += `width:32px; height:32px; padding:0; border-radius:8px; font-size:11.5px; ${answered && i!==state.currentIndex ? 'background:var(--green-bg); border-color:var(--green); color:var(--green);' : ''}`;
+    dot.onclick = () => { state.currentIndex = i; renderQuizScreen(); };
+    nav.appendChild(dot);
+  });
+
+  const typeLabels = {mcq:"MCQ", truefalse:"True / False", fill:"Fill in the Blank", oneword:"One-Word Answer"};
+  document.getElementById("questionTypeBadge").textContent = typeLabels[q.type] || "MCQ";
+  document.getElementById("questionText").textContent = q.question;
+
+  const optionsArea = document.getElementById("optionsArea");
+  optionsArea.innerHTML = "";
+
+  if (q.type === "fill" || q.type === "oneword") {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Apna jawab yahan likho...";
+    input.value = state.answers[state.currentIndex] || "";
+    input.oninput = (e) => { state.answers[state.currentIndex] = e.target.value; };
+    optionsArea.appendChild(input);
+  } else {
+    const letters = ["A","B","C","D"];
+    q.options.forEach((opt, i) => {
+      const row = document.createElement("div");
+      row.className = "option-row" + (state.answers[state.currentIndex] === i ? " selected" : "");
+      row.innerHTML = `<div class="bubble">${letters[i] || i+1}</div><div style="flex:1; font-size:14px;">${opt}</div>`;
+      row.onclick = () => { state.answers[state.currentIndex] = i; renderQuizScreen(); };
+      optionsArea.appendChild(row);
+    });
+  }
+
+  document.getElementById("prevBtn").disabled = state.currentIndex === 0;
+  document.getElementById("prevBtn").style.opacity = state.currentIndex === 0 ? "0.4" : "1";
+  document.getElementById("nextBtn").textContent = (state.currentIndex === total - 1) ? "Quiz Submit Karo ✓" : "Agla →";
+}
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  if (state.currentIndex > 0) { state.currentIndex--; renderQuizScreen(); }
+});
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const total = state.quiz.questions.length;
+  if (state.currentIndex < total - 1) { state.currentIndex++; renderQuizScreen(); }
+  else { submitQuiz(); }
+});
+
+function normalize(str) {
+  return (str || "").toString().trim().toLowerCase().replace(/[.,!?;:"'-]/g, "").replace(/\s+/g," ");
+}
+
+function submitQuiz() {
+  clearInterval(state.timerInterval);
+  const questions = state.quiz.questions;
+  let correct = 0, wrong = 0, skipped = 0;
+  const topicStats = {};
+  const detail = [];
+
+  questions.forEach((q, i) => {
+    const userAns = state.answers[i];
+    let isCorrect = false;
+    let isSkipped = userAns === null || userAns === undefined || userAns === "";
+
+    if (!isSkipped) {
+      if (q.type === "fill" || q.type === "oneword") {
+        const accepted = (q.acceptableAnswers || []).map(normalize);
+        isCorrect = accepted.includes(normalize(userAns));
+      } else {
+        isCorrect = userAns === q.correctIndex;
+      }
+    }
+
+    if (isSkipped) skipped++;
+    else if (isCorrect) correct++;
+    else wrong++;
+
+    const topic = q.topic || "General";
+    if (!topicStats[topic]) topicStats[topic] = { correct: 0, wrong: 0 };
+    if (!isSkipped) { if (isCorrect) topicStats[topic].correct++; else topicStats[topic].wrong++; }
+
+    detail.push({ q, userAns, isCorrect, isSkipped });
+  });
+
+  const total = questions.length;
+  const percentage = total > 0 ? Math.round((correct/total)*100) : 0;
+  let grade = "D", gradeColor = "var(--red)";
+  if (percentage >= 90) { grade = "A+"; gradeColor = "var(--green)"; }
+  else if (percentage >= 75) { grade = "A"; gradeColor = "var(--green)"; }
+  else if (percentage >= 60) { grade = "B"; gradeColor = "var(--gold)"; }
+  else if (percentage >= 40) { grade = "C"; gradeColor = "var(--gold)"; }
+
+  const timeTaken = Math.floor((Date.now() - state.startTime)/1000);
+  const tm = Math.floor(timeTaken/60), ts = timeTaken%60;
+
+  const strong = Object.entries(topicStats).filter(([_,v]) => v.correct >= v.wrong && v.correct > 0).map(([k])=>k);
+  const weak = Object.entries(topicStats).filter(([_,v]) => v.wrong > v.correct).map(([k])=>k);
+
+  let motivation;
+  if (percentage >= 90) motivation = "Zabardast! Tumhari samajh bahut mazboot hai is topic mein — bas isi tarah practice jaari rakho. 🎯";
+  else if (percentage >= 75) motivation = "Bahut acha kiya! Thoda aur revision karoge toh full marks pakke hain. 👏";
+  else if (percentage >= 60) motivation = "Achi shuruaat hai! Kuch topics pe thoda aur dhyan do, sudhar zaroor hoga. 💪";
+  else if (percentage >= 40) motivation = "Basics clear hain, lekin practice aur zaroori hai. Weak topics dobara padho. 📘";
+  else motivation = "Ghabrao mat — ye ek shuruaat hai. Material ko dobara dhyan se padho aur phir try karo. Har attempt tumhe better banata hai. 🌱";
+
+  document.getElementById("gradeBadge").textContent = grade;
+  document.getElementById("gradeBadge").style.color = gradeColor;
+  document.getElementById("scoreLine").textContent = `${correct} / ${total} sahi · ${percentage}% · Time: ${tm}:${ts.toString().padStart(2,"0")}`;
+  document.getElementById("correctCount").textContent = `✓ ${correct} Sahi`;
+  document.getElementById("wrongCount").textContent = `✕ ${wrong} Galat`;
+  document.getElementById("skippedCount").textContent = `— ${skipped} Chhoda`;
+  document.getElementById("motivationText").textContent = motivation;
+  document.getElementById("strongTopics").textContent = strong.length ? strong.join(", ") : "Abhi koi clear strong topic nahi bana.";
+  document.getElementById("weakTopics").textContent = weak.length ? weak.join(", ") : "Koi major weak topic nahi — badhiya!";
+
+  const letters = ["A","B","C","D"];
+  const akList = document.getElementById("answerKeyList");
+  akList.innerHTML = "";
+  detail.forEach((d, i) => {
+    const div = document.createElement("div");
+    div.style.cssText = "padding:12px 0; border-bottom:1px solid var(--border);";
+    let userAnsText, correctAnsText;
+    if (d.q.type === "fill" || d.q.type === "oneword") {
+      userAnsText = d.isSkipped ? "(chhoda gaya)" : d.userAns;
+      correctAnsText = (d.q.acceptableAnswers || []).join(" / ");
+    } else {
+      userAnsText = d.isSkipped ? "(chhoda gaya)" : `${letters[d.userAns]}. ${d.q.options[d.userAns]}`;
+      correctAnsText = `${letters[d.q.correctIndex]}. ${d.q.options[d.q.correctIndex]}`;
+    }
+    const statusColor = d.isSkipped ? "var(--gold)" : (d.isCorrect ? "var(--green)" : "var(--red)");
+    const statusText = d.isSkipped ? "Skipped" : (d.isCorrect ? "Sahi" : "Galat");
+    div.innerHTML = `
+      <div style="font-size:13.5px; font-weight:700; margin-bottom:6px;">Q${i+1}. ${d.q.question}</div>
+      <div style="font-size:12.5px; color:${statusColor}; font-weight:600; margin-bottom:4px;">${statusText} · Tumhara jawab: ${userAnsText}</div>
+      <div style="font-size:12.5px; color:var(--green); margin-bottom:4px;">Sahi jawab: ${correctAnsText}</div>
+      <div style="font-size:12.5px; color:var(--muted);">${d.q.explanation || ""}</div>
+    `;
+    akList.appendChild(div);
+  });
+
+  showScreen("result");
+}
+
+document.getElementById("printBtn").addEventListener("click", () => window.print());
+document.getElementById("restartBtn").addEventListener("click", () => {
+  state.answers = new Array(state.quiz.questions.length).fill(null);
+  state.currentIndex = 0;
+  state.startTime = Date.now();
+  renderQuizScreen();
+  showScreen("quiz");
+  startTimer();
+});
+document.getElementById("newQuizBtn").addEventListener("click", () => {
+  state.quiz = null; state.file = null; state.fileBase64 = null;
+  document.getElementById("dropZoneEmpty").style.display = "block";
+  document.getElementById("dropZoneFile").style.display = "none";
+  generateBtn.disabled = true;
+  showScreen("setup");
+});
+</script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const languageLabels = { hindi: "Hindi (Devanagari script)", english: "English", hinglish: "Hinglish (Roman script, natural Hindi-English mix)" };
+  const languageLabels = { auto: null, hindi: "Hindi (Devanagari script)", english: "English", hinglish: "Hinglish (Roman script, natural Hindi-English mix)" };
   const quizTypeInstructions = {
     mcq: 'Every question must be type "mcq" with exactly 4 balanced options and one correctIndex (0-3).',
     truefalse: 'Every question must be type "truefalse" with exactly 2 options meaning True and False (translated into the target language, e.g. "सत्य"/"असत्य" for Hindi) and correctIndex (0 or 1).',
@@ -27,7 +28,11 @@ export default async function handler(req, res) {
   };
 
   const numQuestions = parseInt(count, 10) || 10;
-  const langLabel = languageLabels[language] || "Hindi (Devanagari script)";
+  const isAutoLanguage = !language || language === "auto";
+  const langLabel = isAutoLanguage ? null : (languageLabels[language] || "Hindi (Devanagari script)");
+  const languageInstruction = isAutoLanguage
+    ? "Detect the primary language and script used in the uploaded document (e.g. Hindi/Devanagari, English, Marathi, etc). Write ALL questions, options, topic tags, and explanations in that SAME language and script as the source document. If the document mixes languages, use whichever language dominates the content."
+    : `Write all questions, options, topic tags, and explanations in ${langLabel}, regardless of the uploaded document's own language.`;
   const qTypeInstruction = quizTypeInstructions[quizType] || quizTypeInstructions.mcq;
   const diffLabel = difficultyLabels[difficulty] || difficultyLabels.medium;
 
@@ -43,18 +48,18 @@ STRICT RULES:
 - Base every question ONLY on information actually present in the uploaded material. Never invent facts, numbers, or details not present in the document.
 - If the material is too short or unclear to generate the requested number of quality questions, generate as many high-quality questions as the content genuinely supports (do not pad with filler or repeat questions).
 - No duplicate or near-duplicate questions.
-- Language must be natural and grammatically correct, written in ${langLabel}.
+- LANGUAGE: ${languageInstruction} Keep the language natural and grammatically correct.
 - ${qTypeInstruction}
 - Difficulty level: ${diffLabel} Gradually increase difficulty across the question set.
-- Each question must include a short "topic" tag (2-4 words, in ${langLabel}) representing which concept/sub-topic it tests — this is used to build a performance report, so keep topic tags consistent when multiple questions share a topic.
-- Each question must include a short "explanation" (1-2 sentences, in ${langLabel}) explaining why the correct answer is right.
+- Each question must include a short "topic" tag (2-4 words, matching the same language as your answers) representing which concept/sub-topic it tests — this is used to build a performance report, so keep topic tags consistent when multiple questions share a topic.
+- Each question must include a short "explanation" (1-2 sentences, matching the same language as your answers) explaining why the correct answer is right.
 - Avoid options that are obviously wrong or absurd for mcq/truefalse — all 4 options should be plausible.
 
 Generate exactly ${numQuestions} questions (or fewer only if the material genuinely does not support that many).
 
 Return ONLY raw JSON, no markdown code fences, no commentary, matching exactly this shape:
 {
-  "quizTitle": "short descriptive title based on the material, in ${langLabel}",
+  "quizTitle": "short descriptive title based on the material, in the same language as the questions",
   "questions": [
     {
       "type": "mcq" | "truefalse" | "fill" | "oneword",
@@ -118,4 +123,4 @@ Note: only include "options" and "correctIndex" for mcq/truefalse types. Only in
     console.error("Generate quiz function error:", err);
     res.status(500).json({ error: "Quiz generation failed" });
   }
-}
+    }

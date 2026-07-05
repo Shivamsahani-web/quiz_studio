@@ -624,6 +624,9 @@ document.getElementById("newQuizBtn").addEventListener("click", () => {
   generateBtn.disabled = true;
   showScreen("setup");
 });
+  if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+  }
 </script>
 </body>
 </html>

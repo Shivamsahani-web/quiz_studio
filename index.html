@@ -267,7 +267,7 @@
 </div>
 
 <script>
-const LANGS = [{id:"hindi",label:"Hindi"},{id:"english",label:"English"},{id:"hinglish",label:"Hinglish"}];
+const LANGS = [{id:"auto",label:"Auto (File jaisi)"},{id:"hindi",label:"Hindi"},{id:"english",label:"English"},{id:"hinglish",label:"Hinglish"}];
 const QTYPES = [{id:"mcq",label:"MCQ"},{id:"truefalse",label:"True/False"},{id:"fill",label:"Fill Blanks"},{id:"oneword",label:"One-Word"},{id:"mixed",label:"Mixed"}];
 const DIFFS = [{id:"easy",label:"Easy"},{id:"medium",label:"Medium"},{id:"hard",label:"Hard"},{id:"competitive",label:"Competitive"}];
 const COUNTS = [{id:"5",label:"5"},{id:"10",label:"10"},{id:"20",label:"20"},{id:"30",label:"30"},{id:"50",label:"50"},{id:"100",label:"100"}];
@@ -275,7 +275,7 @@ const QORDERS = [{id:"sequential",label:"Sequential"},{id:"random",label:"Random
 const OORDERS = [{id:"original",label:"Original"},{id:"randomized",label:"Randomized"}];
 
 const state = {
-  language:"hindi", quizType:"mcq", difficulty:"medium", count:"10",
+  language:"auto", quizType:"mcq", difficulty:"medium", count:"10",
   questionOrder:"sequential", optionOrder:"original",
   file:null, fileBase64:null, fileMime:null,
   quiz:null, currentIndex:0, answers:[], startTime:null, timerInterval:null,

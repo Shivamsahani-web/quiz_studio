@@ -79,7 +79,7 @@ Note: only include "options" and "correctIndex" for mcq/truefalse types. Only in
     const model = "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
-    const maxOutputTokens = Math.min(8192, Math.max(3000, numQuestions * 220 + 1500));
+    const maxOutputTokens = Math.min(8192, numQuestions * 300 + 2000);
 
     const response = await fetch(url, {
       method: "POST",
@@ -97,6 +97,7 @@ Note: only include "options" and "correctIndex" for mcq/truefalse types. Only in
           maxOutputTokens,
           temperature: 0.6,
           response_mime_type: "application/json",
+          thinking_config: { thinking_budget: 0 },
         },
       }),
     });
